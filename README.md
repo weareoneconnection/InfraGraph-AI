@@ -20,6 +20,7 @@ InfraGraph AI 把分散、异构、中英文混杂的工程资料（不符合项
 ## 运行
 
 ```bash
+git clone https://github.com/weareoneconnection/InfraGraph-AI.git && cd InfraGraph-AI
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ./run.sh                    # http://127.0.0.1:8102 ，点“知识生产 → 载入演示语料”
