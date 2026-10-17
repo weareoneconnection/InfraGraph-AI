@@ -5,4 +5,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 ENV INFRAGRAPH_DB=/data/infragraph.db
 EXPOSE 8102
-CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8102"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8102"]

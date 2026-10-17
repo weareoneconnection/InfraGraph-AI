@@ -1,0 +1,84 @@
+{
+  "version": "infragraph-gold-2026.10.17",
+  "note": "Synthetic corpus annotated by the development team; measures reproducibility on this set, not field accuracy.",
+  "relations": {
+    "QA-NCR-0042": [
+      "Asset:P52|HAS_DEFECT|Defect:crack", "Defect:crack|RECORDED_IN|Document:NCR-0042", "Document:NCR-0042|ABOUT|Asset:P52",
+      "Activity:formwork removal|PERFORMED_ON|Asset:P52", "Defect:crack|TREATED_BY|Measure:epoxy injection",
+      "Defect:crack|TREATED_BY|Measure:re-inspection", "Measure:re-inspection|GOVERNED_BY|Standard:GB 50204-2015",
+      "Measure:re-inspection|APPROVED_BY|Party:engineer"],
+    "QA-INS-P52": [
+      "Asset:P52|HAS_DEFECT|Defect:honeycombing", "Asset:P52|HAS_DEFECT|Defect:crack",
+      "Defect:honeycombing|TREATED_BY|Measure:epoxy injection", "Defect:crack|RECORDED_IN|Document:NCR-0042"],
+    "HSE-MS-P47": [
+      "Asset:P47|EXPOSED_TO|Hazard:unprotected edge", "Activity:work at height|EXPOSED_TO|Hazard:unprotected edge",
+      "Activity:work at height|PERFORMED_ON|Asset:P47", "Hazard:unprotected edge|TREATED_BY|Measure:edge protection",
+      "Hazard:unprotected edge|TREATED_BY|Measure:fall arrest system", "Activity:work at height|GOVERNED_BY|Standard:JGJ 80-2016"],
+    "CON-LTR-S12": [
+      "Event:variation|REQUESTED_BY|Party:subcontractor", "Event:extension of time|REQUESTED_BY|Party:subcontractor",
+      "Event:variation|GOVERNED_BY|Clause:Clause 13.3"],
+    "CON-GC-13": [
+      "Event:variation|GOVERNED_BY|Clause:Clause 13.3", "Event:extension of time|GOVERNED_BY|Clause:Clause 8.4",
+      "Event:extension of time|REQUESTED_BY|Party:contractor", "Event:variation|APPROVED_BY|Party:engineer"],
+    "PLT-LIFT-S12": [
+      "Measure:lift plan|APPROVED_BY|Party:engineer", "Activity:lifting operation|PERFORMED_ON|Asset:S12",
+      "Hazard:struck by load|TREATED_BY|Measure:exclusion zone", "Activity:lifting operation|EXPOSED_TO|Hazard:struck by load"],
+    "OM-BRG-03": [
+      "Asset:BRG-03|HAS_DEFECT|Defect:displacement", "Asset:BRG-03|HAS_DEFECT|Defect:corrosion",
+      "Activity:bearing inspection|PERFORMED_ON|Asset:BRG-03", "Defect:corrosion|TREATED_BY|Measure:re-inspection",
+      "Defect:corrosion|GOVERNED_BY|Standard:JTG H11-2004"],
+    "HSE-EXC-07": [
+      "Asset:S07|EXPOSED_TO|Hazard:excavation collapse", "Activity:excavation|EXPOSED_TO|Hazard:excavation collapse",
+      "Activity:excavation|PERFORMED_ON|Asset:S07", "Hazard:excavation collapse|TREATED_BY|Measure:shoring",
+      "Measure:shoring|GOVERNED_BY|Standard:JGJ 120-2012"],
+    "QA-CON-P61": [
+      "Asset:P61|HAS_DEFECT|Defect:low concrete strength", "Activity:concrete pouring|PERFORMED_ON|Asset:P61",
+      "Defect:low concrete strength|RECORDED_IN|Document:NCR-0057", "Measure:core test|GOVERNED_BY|Standard:GB 50204-2015",
+      "Defect:low concrete strength|TREATED_BY|Measure:core test"],
+    "HSE-INC-P61": [
+      "Activity:formwork removal|PERFORMED_ON|Asset:P61", "Event:incident|RECORDED_IN|Document:SI-0019",
+      "Hazard:fall from height|TREATED_BY|Measure:edge protection", "Activity:work at height|EXPOSED_TO|Hazard:fall from height",
+      "Asset:P61|EXPOSED_TO|Hazard:fall from height", "Activity:work at height|PERFORMED_ON|Asset:P61"]
+  },
+  "cross_lingual_entities": ["Asset:P52", "Defect:crack", "Measure:epoxy injection", "Document:NCR-0042", "Standard:GB 50204-2015",
+                             "Party:engineer", "Measure:edge protection", "Activity:work at height", "Activity:formwork removal",
+                             "Event:variation", "Event:extension of time"],
+  "retrieval": [
+    {"q": "P52 墩柱裂缝怎么处理", "expect": ["QA-NCR-0042", "QA-INS-P52"]},
+    {"q": "crack on Pier P52 repair method", "expect": ["QA-INS-P52", "QA-NCR-0042"]},
+    {"q": "P52 蜂窝麻面", "expect": ["QA-INS-P52"]},
+    {"q": "Who approves the re-inspection of NCR-0042?", "expect": ["QA-NCR-0042"]},
+    {"q": "P47 临边防护要求", "expect": ["HSE-MS-P47"]},
+    {"q": "edge protection for work at height at P47", "expect": ["HSE-MS-P47"]},
+    {"q": "高处作业执行哪个规范", "expect": ["HSE-MS-P47"]},
+    {"q": "分包商变更申请 S12 锚栓", "expect": ["CON-LTR-S12"]},
+    {"q": "extension of time notice period", "expect": ["CON-GC-13"]},
+    {"q": "工期延长多少天内通知", "expect": ["CON-GC-13"]},
+    {"q": "lifting at Station S12 exclusion zone", "expect": ["PLT-LIFT-S12"]},
+    {"q": "S12 吊装方案谁批准", "expect": ["PLT-LIFT-S12"]},
+    {"q": "BRG-03 bearing corrosion", "expect": ["OM-BRG-03"]},
+    {"q": "基坑坍塌支护规范", "expect": ["HSE-EXC-07"]},
+    {"q": "P61 混凝土强度不足 钻芯", "expect": ["QA-CON-P61"]},
+    {"q": "P61 拆模事故", "expect": ["HSE-INC-P61"]}
+  ],
+  "claims": [
+    {"text": "P52墩柱裂缝须采用环氧注浆修补", "expect": "SUPPORTED"},
+    {"text": "The crack at Pier P52 is recorded in NCR-0042", "expect": "SUPPORTED"},
+    {"text": "P52裂缝无需修补，NCR-0042可直接关闭", "expect": "CONTRADICTED"},
+    {"text": "P52 pier crack requires no corrective action and can be closed immediately", "expect": "CONTRADICTED"},
+    {"text": "P47临边必须设置防护栏杆", "expect": "SUPPORTED"},
+    {"text": "Edge protection at P47 is optional", "expect": "CONTRADICTED"},
+    {"text": "P47作业人员可以不使用安全带", "expect": "CONTRADICTED"},
+    {"text": "工期延长须在事件发生后28天内通知", "expect": "SUPPORTED"},
+    {"text": "工期延长须在事件发生后7天内通知", "expect": "CONTRADICTED"},
+    {"text": "The subcontractor requests an extension of time of 10 days", "expect": "SUPPORTED"},
+    {"text": "The subcontractor requests an extension of time of 30 days", "expect": "CONTRADICTED"},
+    {"text": "The lifting operation at Station S12 requires a lift plan approved by the engineer", "expect": "SUPPORTED"},
+    {"text": "BRG-03支座锈蚀须进行复检", "expect": "SUPPORTED"},
+    {"text": "基坑坍塌风险必须采用支护控制", "expect": "SUPPORTED"},
+    {"text": "TUN-01 tunnel ventilation fans require monthly maintenance", "expect": "INSUFFICIENT_EVIDENCE"},
+    {"text": "P99墩桩基检测合格", "expect": "INSUFFICIENT_EVIDENCE"},
+    {"text": "The crack width at Pier P52 is 0.3 mm", "expect": "SUPPORTED"},
+    {"text": "The crack width at Pier P52 is 1.5 mm", "expect": "CONTRADICTED"}
+  ]
+}

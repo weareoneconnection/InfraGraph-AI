@@ -1,36 +1,96 @@
 # InfraGraph AI
 
-**交通基础设施知识资产工厂与工程知识图谱平台**
+**交通基础设施知识资产工厂与工程知识图谱**
 
-InfraGraph AI 是独立的交通知识资产参赛作品。目标不是“再做一个聊天知识库”，而是把分散、隐性、异构的工程资料转成可版本化、可计算、可追溯的知识资产，形成 Ontology + Knowledge Graph + Evidence Graph，并通过检索、Claim Verification 和发布快照为大模型与智能体提供知识底座。
+InfraGraph AI 把分散、异构、中英文混杂的工程资料（不符合项、检验记录、施工方案、合同条款、往来函件、养护报告）变成**带出处、可版本化、可核验、可发布**的知识资产：每个实体在中英文之间自动对齐，每条关系都能定位到原文的哪一句、哪几个字符，每次发布都有哈希快照和与上一版的差异。它为大模型和智能体提供可信的知识底座，而不是又一个“像不像人说话”的问答库。
 
-## 一键运行
+> 本项目是 GlobalInfra AI 平台的**知识资产层**，可独立部署；平台中的智能体可通过 MCP 或 API 调用它的检索与主张核验能力。
+
+## 解决什么问题
+
+| 问题 | 普通知识库 | InfraGraph AI |
+| --- | --- | --- |
+| 中英文资料各说各的 | 中文问不到英文资料 | “P52墩柱/Pier P52”“裂缝/crack”对齐为同一个实体，中文问题能命中英文记录 |
+| 回答找不到出处 | 只给文件名 | 每条关系和每个检索结果都带来源、版本、内容哈希和句子级字符位置 |
+| 资料更新后旧内容还在用 | 新旧版本混用 | 新版本自动接替，旧版本及其关系标为已替代、保留可查 |
+| 错误说法被当成“有依据” | 关键词命中即支持 | 原文规定相反或数值不同时判为**相互矛盾**，找不到依据判为**证据不足** |
+| 自动抽取的错误直接入库 | 无人把关 | 低置信度关系进入人工复核队列，未清空不得发布 |
+| 知识版本无法追溯 | 覆盖更新 | 发布前校验出处与本体，冻结清单并计算 SHA-256，可检出事后篡改 |
+
+## 运行
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-./run.sh
+./run.sh                    # http://127.0.0.1:8102 ，点“知识生产 → 载入演示语料”
+pytest -q                   # 22 项测试
+python evals/run_eval.py    # 标注集评测
 ```
 
-打开 http://127.0.0.1:8102 。
+MCP（官方 MCP Python SDK v2），供智能体调用检索与核验：
 
-支持直接上传 TXT/MD/CSV/JSON、带文字层 PDF、DOCX。默认全部离线运行，不需要模型 API。
+```bash
+python -m app.mcp_server                               # stdio
+python -m app.mcp_server --transport streamable-http   # http://127.0.0.1:8112/mcp
+```
 
 ## 知识生产链
 
-`Ingest → Parse → Extract → Normalize → Entity Resolution → Ontology Mapping → Relation Build → Provenance Validation → Publish`
+```text
+接入（文本 / 带文字层 PDF / Word）→ 中英文分句 → 实体与编号识别 → 跨语言实体对齐
+ → 本体约束的关系抽取（句内、就近归属）→ 置信度分流（≥0.7 入库，<0.7 人工复核）
+ → 混合检索（BM25 + 实体链接）/ 主张核验 → 发布闸门（出处、本体、复核）→ 哈希快照 + 差异
+```
 
-## 核心工程能力
+- **本体**：10 类实体（资产、病害、危险源、措施、作业、文件、标准、合同条款、参与方、事件）、9 种关系，每种关系规定主体和客体类型；违反约束的关系不能入库（`GET /ontology`）。
+- **编号规范化**：`P47墩` / `Pier P47` → `Asset:P47`；`GB50204-2015` → `GB 50204-2015`；`第13.3条` / `Sub-Clause 13.3` → `Clause 13.3`；“第3步”不会被误认为条款。
+- **就近归属**：“裂缝须采用环氧注浆修补，并按照 GB 50204-2015 进行复检”中，标准只归属同一分句里的“复检”，不会错挂到“环氧注浆”。
+- **可选大模型**：设置 `INFRAGRAPH_MODEL_BASE_URL` 与 `INFRAGRAPH_MODEL` 后，可用任意 OpenAI 兼容模型（DeepSeek、通义千问、本地 Ollama 等）补充抽取。模型给出的实体必须逐字引用原句，关系必须符合本体，否则丢弃。
 
-- Infrastructure Ontology：项目、资产、图纸、规范、工作包、方法书、检验、NCR、合同条款、变更、索赔、风险、许可、整改、核验、进度、成本、传感器、维护等核心类。
-- Provenance First：每个 Knowledge Asset 保留 Source Ref、内容哈希、版本、司法辖区、生命周期和领域元数据。
-- Knowledge Graph：不仅搜索文件，还建立 Asset → Inspection → NCR → Corrective Action → Verification 等可计算关系。
-- Hybrid Retrieval Foundation：当前可运行版本使用 SQLite FTS5 + Graph；生产可替换 pgvector/OpenSearch/Neo4j，而 API 合同不变。
-- Claim Verification：对工程主张返回真实检索来源；证据不足时返回 `INSUFFICIENT_EVIDENCE`。
-- Knowledge Release：知识资产以 manifest hash 形成可审计版本快照。
-- Benchmark：评估 Recall@5 与 Provenance Completeness，而不是只评价“回答像不像人”。
+## 主张核验
+
+| 主张 | 结果 | 原因 |
+| --- | --- | --- |
+| P52墩柱裂缝须采用环氧注浆修补 | 有依据 | 与 QA-NCR-0042 原文一致 |
+| P52 pier crack requires no corrective action and can be closed immediately | 相互矛盾 | 原文规定须修补，主张却免除义务（跨语言） |
+| 工期延长须在事件发生后 7 天内通知 | 相互矛盾 | 原文为 28 天 |
+| TUN-01 tunnel ventilation fans require monthly maintenance | 证据不足 | 知识库无相关来源 |
+
+核验只说明当前知识库中能否找到一致或冲突的原文，不构成工程、法律或合同结论。
+
+## 评测（`python evals/run_eval.py`）
+
+标注集：10 份中英文合成工程资料、50 条人工标注关系、11 个跨语言实体、16 条检索问题（含跨语言）、18 条主张。
+
+| 指标 | 结果 | 门禁 |
+| --- | ---: | ---: |
+| 关系精确率 / 召回率 / F1 | 1.00 / 0.96 / 0.98 | F1 ≥ 0.85 |
+| 跨语言实体对齐 | 100% | 100% |
+| 检索 Recall@3 / MRR | 100% / 0.94 | ≥ 90% / ≥ 0.80 |
+| 主张核验准确率 | 100% | ≥ 90% |
+| 版本接替正确率 | 100% | 100% |
+| 出处完整性（引文与原文逐字一致） | 100% | 100% |
+| 发布治理（复核未清空即阻断） | 通过 | 通过 |
+
+未召回的 2 条关系均需要跨句推理（例如“强度不足”与下一句的“钻芯取样”），当前规则只做句内抽取。标注集由开发团队设计，只证明在该集合上的可复现性，不代表真实项目上的准确率；真实落地需要更大规模、由第三方标注的盲测集。
+
+## API 摘要
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/documents`、`/documents/upload` | 入库文本或文件（同内容幂等，同版本号不同内容拒绝） |
+| GET | `/documents/{ref}` | 来源、全部版本、当前实体与关系 |
+| GET | `/search?q=` | 混合检索，返回识别出的查询实体 |
+| POST | `/claims/verify` | 主张核验 |
+| GET | `/entities/{key}`、`/graph` | 实体详情（别名、语言、关系、出处）与图谱 |
+| GET/POST | `/review`、`/review/{id}` | 待复核关系与人工审定（须具名人员） |
+| GET/POST | `/releases/gates`、`/releases` | 发布闸门、发布与历史（含哈希校验） |
+| GET | `/export?fmt=jsonld|ntriples` | 导出图谱 |
 
 ## 边界
 
-当前数据为合成示例，不宣称已经完成企业级知识治理、真实法规法律校核、OCR、图纸语义理解或大规模知识图谱生产。真实落地需要专业人员复核、权限体系、对象存储、OCR/版面模型、向量库、图数据库以及知识发布审批流程。
+演示语料、编号和数值均为合成内容，引用的标准编号仅作为标识符，内容不代表标准原文。当前不含 OCR 和图纸语义解析，扫描件需先 OCR。参考实现使用 SQLite 与内存检索，生产可替换为 PostgreSQL、向量库与图数据库，API 契约不变；API 未内置身份认证，应部署在企业身份网关之后。
+
+## 许可证
+
+Apache-2.0，见 [LICENSE](LICENSE)；第三方依赖见 [THIRD_PARTY.md](THIRD_PARTY.md)。

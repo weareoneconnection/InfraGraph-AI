@@ -1,8 +1,11 @@
+.PHONY: install run test eval mcp
+install:
+	pip install -r requirements.txt
 run:
 	./run.sh
-
 test:
-	PYTHONPATH=. pytest -q
-
+	pytest -q
 eval:
-	PYTHONPATH=. python evals/run_eval.py
+	python evals/run_eval.py
+mcp:
+	python -m app.mcp_server
