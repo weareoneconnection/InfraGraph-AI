@@ -1,0 +1,7 @@
+services:
+  infragraph:
+    build: .
+    ports: ["8102:8102"]
+    volumes: ["infragraph-data:/data"]
+volumes:
+  infragraph-data:
