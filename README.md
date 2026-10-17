@@ -23,7 +23,7 @@ InfraGraph AI 把分散、异构、中英文混杂的工程资料（不符合项
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ./run.sh                    # http://127.0.0.1:8102 ，点“知识生产 → 载入演示语料”
-pytest -q                   # 22 项测试
+pytest -q                   # 23 项测试
 python evals/run_eval.py    # 标注集评测
 ```
 
@@ -56,7 +56,7 @@ python -m app.mcp_server --transport streamable-http   # http://127.0.0.1:8112/m
 | 工期延长须在事件发生后 7 天内通知 | 相互矛盾 | 原文为 28 天 |
 | TUN-01 tunnel ventilation fans require monthly maintenance | 证据不足 | 知识库无相关来源 |
 
-核验只说明当前知识库中能否找到一致或冲突的原文，不构成工程、法律或合同结论。
+主张中点名的构件、文件、条款或标准必须与依据所在资料一致，“P47 无需防护”不会被一条关于 P61 的句子判定。核验只说明当前知识库中能否找到一致或冲突的原文，不构成工程、法律或合同结论。
 
 ## 评测（`python evals/run_eval.py`）
 
@@ -67,7 +67,7 @@ python -m app.mcp_server --transport streamable-http   # http://127.0.0.1:8112/m
 | 关系精确率 / 召回率 / F1 | 1.00 / 0.96 / 0.98 | F1 ≥ 0.85 |
 | 跨语言实体对齐 | 100% | 100% |
 | 检索 Recall@3 / MRR | 100% / 0.94 | ≥ 90% / ≥ 0.80 |
-| 主张核验准确率 | 100% | ≥ 90% |
+| 主张核验准确率 / 依据正确率 | 100% / 100% | ≥ 90% |
 | 版本接替正确率 | 100% | 100% |
 | 出处完整性（引文与原文逐字一致） | 100% | 100% |
 | 发布治理（复核未清空即阻断） | 通过 | 通过 |

@@ -10,7 +10,8 @@
 - Claim verification with polarity and quantity conflict detection: SUPPORTED / CONTRADICTED / INSUFFICIENT_EVIDENCE.
 - Human review queue; release gates (provenance, ontology, review); manifest SHA-256 and release diffs; tamper detection.
 - MCP server; JSON-LD and N-Triples export; web console with graph explorer.
-- Annotated evaluation set and 22 tests.
+- Claim evidence must name the same asset, document, clause or standard as the claim (source-level).
+- Annotated evaluation set (incl. deciding-source accuracy) and 23 tests.
 
 ## 1.0.0
 - Keyword ontology mapping, FTS5 search and release hash.

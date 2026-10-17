@@ -29,6 +29,7 @@ from .store import Store, now
 from .text import polarity, quantities, tokens
 
 HUMAN_FORBIDDEN = ("agent:", "model:", "system", "policy:")
+IDENTIFIED = {"Asset", "Document", "Clause", "Standard"}  # entity types that name one specific thing
 
 
 class ReviewError(PermissionError):
@@ -127,8 +128,12 @@ class KnowledgeGraph:
             by_chunk: dict[tuple, set] = {}
             for m in mentions:
                 by_chunk.setdefault((m["version_id"], m["chunk_idx"]), set()).add(m["entity_key"])
+            by_version: dict[int, set] = {}
+            for (vid, _), keys in by_chunk.items():
+                by_version.setdefault(vid, set()).update(keys)
             for ch in chunks:
                 ch["entities"] = sorted(by_chunk.get((ch["version_id"], ch["idx"]), set()))
+                ch["document_entities"] = sorted(by_version.get(ch["version_id"], set()))
             docs = [Counter(tokens(ch["text"])) for ch in chunks]
             df = Counter()
             for d in docs:
@@ -168,6 +173,7 @@ class KnowledgeGraph:
             seen.add(k)
             out.append({"ref": ch["ref"], "title": ch["title"], "version": ch["version"], "content_hash": ch["content_hash"],
                         "sentence": ch["idx"], "start": ch["start"], "end": ch["end"], "text": ch["text"], "entities": ch["entities"],
+                        "document_entities": ch["document_entities"],
                         "linked_entities": shared, "score": round(score, 3)})
             if len(out) >= top_k:
                 break
@@ -175,10 +181,11 @@ class KnowledgeGraph:
 
     # --- claim verification -------------------------------------------------------------
     def verify_claim(self, claim: str, jurisdiction: str | None = None) -> dict:
-        passages = self.search(claim, top_k=5, jurisdiction=jurisdiction)
+        passages = self.search(claim, top_k=8, jurisdiction=jurisdiction)
         claim_terms = set(tokens(claim))
         claim_entities = set(self.query_entities(claim))
         claim_pol, claim_qty = polarity(claim), quantities(claim)
+        claim_ids = {k for k in claim_entities if k.split(":", 1)[0] in IDENTIFIED}
         assessed = []
         for p in passages:
             p_terms = set(tokens(p["text"]))
@@ -187,19 +194,27 @@ class KnowledgeGraph:
             p_pol, p_qty = polarity(p["text"]), quantities(p["text"])
             polarity_conflict = claim_pol != 0 and p_pol != 0 and claim_pol != p_pol
             qty_conflict = any(unit in p_qty and not (vals & p_qty[unit]) for unit, vals in claim_qty.items())
-            # A passage can contradict only if it is about the same thing: enough shared wording or entities.
-            relevant = coverage >= 0.25 or entity_overlap >= 0.3
+            # A passage can contradict only if it is about the same thing: when the claim names entities
+            # (a pier, a defect, a clause) the passage must share them; otherwise enough shared wording.
+            relevant = entity_overlap >= 0.3 if claim_entities else coverage >= 0.35
+            # A claim about P47 is not decided by a source about P61: named things must match within the source,
+            # because the sentence that states a rule often relies on the pier named one sentence earlier.
+            if claim_ids and not claim_ids & set(p["document_entities"]):
+                relevant = False
             assessed.append({**p, "coverage": round(coverage, 2), "entity_overlap": round(entity_overlap, 2),
                              "polarity_conflict": polarity_conflict, "quantity_conflict": qty_conflict, "relevant": relevant})
         contradicting = [a for a in assessed if a["relevant"] and (a["polarity_conflict"] or a["quantity_conflict"])]
         supporting = [a for a in assessed if not a["polarity_conflict"] and not a["quantity_conflict"]
-                      and a["coverage"] >= 0.5 and (not claim_entities or a["entity_overlap"] >= 0.5)]
+                      and a["relevant"] and a["coverage"] >= 0.5 and (not claim_entities or a["entity_overlap"] >= 0.5)]
         strength = lambda a: a["coverage"] + a["entity_overlap"]  # noqa: E731
         # The closest passage decides: a weakly related number elsewhere does not overturn a passage that states the claim.
+        def best(items):  # the deciding passages: the strongest and any nearly as strong
+            ranked = sorted(items, key=strength, reverse=True)
+            return [a for a in ranked if strength(a) >= 0.75 * strength(ranked[0])][:3]
         if contradicting and (not supporting or max(map(strength, contradicting)) >= max(map(strength, supporting))):
-            verdict, evidence = "CONTRADICTED", sorted(contradicting, key=strength, reverse=True)[:3]
+            verdict, evidence = "CONTRADICTED", best(contradicting)
         elif supporting:
-            verdict, evidence = "SUPPORTED", sorted(supporting, key=strength, reverse=True)[:3]
+            verdict, evidence = "SUPPORTED", best(supporting)
         else:
             verdict, evidence = "INSUFFICIENT_EVIDENCE", [a for a in assessed if a["relevant"]][:2]
         with self.store.tx() as c:

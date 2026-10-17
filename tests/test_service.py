@@ -16,6 +16,11 @@ def test_entities_are_linked_across_languages(kg):
     assert p52["cross_lingual"] and {"QA-NCR-0042", "QA-INS-P52"} <= set(p52["sources"])
 
 
+def test_evidence_must_be_about_the_named_asset(kg):
+    result = kg.verify_claim("Edge protection at P47 is optional")
+    assert result["verdict"] == "CONTRADICTED" and {e["ref"] for e in result["evidence"]} == {"HSE-MS-P47"}
+
+
 @pytest.mark.parametrize("claim, verdict", [
     ("P52墩柱裂缝须采用环氧注浆修补", "SUPPORTED"),
     ("P52 pier crack requires no corrective action and can be closed immediately", "CONTRADICTED"),
@@ -27,6 +32,8 @@ def test_claim_verification(kg, claim, verdict):
     assert result["verdict"] == verdict
     if verdict != "INSUFFICIENT_EVIDENCE":
         assert result["evidence"]
+        # the deciding passage is about the same thing the claim names
+        assert all(set(e["document_entities"]) & set(result["claim_entities"]) for e in result["evidence"])
 
 
 def test_new_version_supersedes_and_keeps_history(kg):
