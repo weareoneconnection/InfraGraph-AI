@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06110e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect rx='16' width='64' height='64' fill='%2354e5a9'/><text x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='%2304110d'>KG</text></svg>">
 <title>InfraGraph AI</title>
 <style>
 :root{--bg:#081310;--panel:#0f1f19;--panel2:#132a21;--line:#24423a;--text:#ecf7f1;--muted:#93b3a6;--accent:#4fd69a;--gold:#e7c56a;--bad:#ff7d86;--blue:#7fb2ff;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
@@ -23,17 +25,43 @@ svg{width:100%;height:560px;background:#07110d;border-radius:12px;border:1px sol
 .muted{color:var(--muted)}.small{font-size:12px}pre{white-space:pre-wrap;word-break:break-word;background:#07110d;border-radius:10px;padding:10px;font-size:12px;max-height:260px;overflow:auto}
 .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
 @media(max-width:960px){.grid{grid-template-columns:1fr}.pipe{grid-template-columns:repeat(4,1fr)}}
+/* Competition UI 3.0 ------------------------------------------------------ */
+:root{--bg:#06110e;--panel:rgba(12,30,24,.9);--panel2:rgba(17,43,33,.88);--line:rgba(74,225,168,.17);--text:#f1fff9;--muted:#91b8a8;--accent:#54e5a9;--gold:#f1cf73;--bad:#ff7f92;--blue:#78c8ff;--cyan:#5be7e7;--shadow:0 24px 70px rgba(0,0,0,.28)}
+html{scroll-behavior:smooth}body{min-height:100vh;background:
+radial-gradient(circle at 12% -8%,rgba(42,202,137,.2),transparent 31rem),
+radial-gradient(circle at 92% 9%,rgba(67,209,224,.11),transparent 28rem),
+linear-gradient(180deg,#06110e,#071511 45%,#06100d);letter-spacing:.005em}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.17;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:46px 46px;mask-image:linear-gradient(to bottom,#000,transparent 78%)}
+.appbar{position:sticky;top:0;z-index:40;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(5,16,13,.78);backdrop-filter:blur(18px)}.appbar-inner{max-width:1400px;margin:auto;height:58px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:.04em}.brand-mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--cyan));box-shadow:0 0 30px rgba(57,224,163,.28);color:#04120d;font:900 12px var(--mono)}.brand small{display:block;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.16em}.app-status{display:flex;align-items:center;gap:8px;color:#b4d0c5;font-size:11px;font-weight:700;letter-spacing:.1em}.pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px rgba(84,229,169,.1),0 0 16px var(--accent)}
+main{max-width:1400px;padding:28px 24px 72px;position:relative}header.hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(390px,520px);align-items:center;padding:32px 34px;border:1px solid rgba(84,229,169,.2);border-radius:24px;background:linear-gradient(125deg,rgba(15,54,39,.9),rgba(8,29,27,.82));box-shadow:var(--shadow)}
+header.hero:after{content:"KG";position:absolute;right:1rem;top:-3.8rem;font:900 13rem/1 var(--mono);color:rgba(84,229,169,.04);pointer-events:none}.hero-copy{position:relative;z-index:1}.ey{color:#6ff0b8;letter-spacing:.18em}.hero h1{font-size:clamp(36px,5vw,58px);letter-spacing:-.045em;line-height:1;margin:10px 0 14px}.hero h1 span{color:var(--cyan)}.sub{font-size:15px;line-height:1.75;max-width:770px}.hero-notes{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.hero-note{padding:5px 10px;border:1px solid rgba(255,255,255,.1);border-radius:999px;color:#c4e1d5;background:rgba(255,255,255,.035);font-size:11px}.hero-note:before{content:"✓";color:var(--accent);margin-right:6px}
+.kpis{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,minmax(86px,1fr));gap:8px}.kpi{min-width:0;padding:10px 12px;border-color:rgba(255,255,255,.1);background:rgba(5,20,16,.48);backdrop-filter:blur(9px)}.kpi b{font:800 23px/1.1 var(--mono);color:#eafff6}.kpi span{display:block;margin-top:4px;letter-spacing:.05em}
+.pipe{counter-reset:pipe;position:relative;margin:18px 0 20px;gap:8px}.pipe:before{content:"";position:absolute;left:5%;right:5%;top:25px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),var(--cyan),transparent);opacity:.3}.pipe div{counter-increment:pipe;position:relative;min-height:70px;padding:13px 7px 8px;border-color:rgba(255,255,255,.085);border-radius:14px;background:rgba(11,29,23,.74);transition:.2s}.pipe div:hover{transform:translateY(-2px);border-color:rgba(84,229,169,.4);background:rgba(16,44,34,.95)}.pipe div:before{content:"0" counter(pipe);display:block;width:24px;height:24px;margin:0 auto 6px;border-radius:8px;background:#0d251c;border:1px solid rgba(84,229,169,.3);color:#7aefbd;font:700 10px/22px var(--mono)}
+.tabs{position:sticky;top:70px;z-index:25;width:max-content;max-width:100%;padding:5px;margin:0 0 14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(6,18,14,.78);backdrop-filter:blur(16px);overflow-x:auto}.tab{display:flex;align-items:center;gap:8px;border:0;background:transparent;border-radius:10px;padding:9px 12px;white-space:nowrap;transition:.18s}.tab:hover{color:var(--text);background:rgba(255,255,255,.035)}.tab.on{border:0;color:#07130f;background:linear-gradient(135deg,var(--accent),#63dfe2);box-shadow:0 8px 22px rgba(44,200,143,.18)}.tab-index{font:700 9px var(--mono);opacity:.66}
+#view{min-height:550px}.card{position:relative;border-color:rgba(255,255,255,.085);border-radius:20px;padding:20px;background:linear-gradient(160deg,rgba(12,31,24,.95),rgba(8,22,18,.92));box-shadow:0 16px 48px rgba(0,0,0,.18);backdrop-filter:blur(12px)}.card:before{content:"";position:absolute;left:18px;right:18px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(84,229,169,.58),transparent)}.grid{grid-template-columns:minmax(0,1fr) minmax(330px,390px);gap:16px}
+h2{font-size:16px;letter-spacing:-.01em}h3{font-size:11px;text-transform:uppercase;letter-spacing:.12em}
+textarea,input,select{background:rgba(3,14,11,.78);border-color:rgba(255,255,255,.1);transition:border-color .2s,box-shadow .2s}textarea:focus,input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(84,229,169,.11)}
+.btn{min-height:40px;border-radius:11px;background:linear-gradient(135deg,#25aa72,#41d69a);box-shadow:0 9px 24px rgba(37,170,114,.18);transition:transform .18s,filter .18s}.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}.btn:focus-visible,.tab:focus-visible,.tag.ent:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}.btn.alt{box-shadow:none;background:rgba(255,255,255,.045)}.item{padding:13px 14px;border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.034);box-shadow:inset 3px 0 0 rgba(84,229,169,.14)}.tag{padding:2px 7px;border-radius:7px}.tag.ent{background:rgba(84,229,169,.05)}svg{height:590px;border-color:rgba(255,255,255,.08);background-color:#06140f;background-image:radial-gradient(circle at center,rgba(83,229,169,.055) 1px,transparent 1px);background-size:22px 22px}
+footer{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding:16px 2px 0;border-top:1px solid rgba(255,255,255,.07);color:#648276;font:11px var(--mono);letter-spacing:.05em}
+@media(max-width:1080px){header.hero{grid-template-columns:1fr}.kpis{margin-top:22px;grid-template-columns:repeat(4,minmax(90px,1fr))}.grid{grid-template-columns:1fr}.pipe{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:640px){.appbar-inner{height:52px;padding:0 15px}.app-status{font-size:9px}.brand small{display:none}main{padding:16px 14px 56px}header.hero{padding:24px 20px;border-radius:20px}.hero h1{font-size:36px}.sub{font-size:13px}.kpis{grid-template-columns:repeat(2,1fr)}.pipe{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}.pipe:before{display:none}.pipe div{flex:0 0 124px;scroll-snap-align:start}.tabs{top:58px;width:100%;flex-wrap:nowrap}.card{padding:16px;border-radius:17px}.row>*{max-width:100%}svg{height:430px}footer{display:block;line-height:1.8}footer span{display:block}footer span+span{margin-top:6px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
-<body><main>
-<header>
-  <div><div class="ey">TRANSPORT KNOWLEDGE ASSET FACTORY</div><h1>InfraGraph AI</h1>
-  <p class="sub">交通基础设施知识资产工厂：把分散、异构、中英文混杂的工程资料变成带出处、可版本化、可核验、可发布的知识图谱，为大模型和智能体提供可信的知识底座。</p></div>
+<body>
+<nav class="appbar"><div class="appbar-inner"><div class="brand"><span class="brand-mark">KG</span><div>InfraGraph AI<small>TRANSPORT KNOWLEDGE FABRIC</small></div></div><div class="app-status"><span class="pulse"></span>PROVENANCE-AWARE WORKSPACE</div></div></nav>
+<main>
+<header class="hero">
+  <div class="hero-copy"><div class="ey">TRANSPORT KNOWLEDGE ASSET FACTORY</div><h1>InfraGraph <span>AI</span></h1>
+  <p class="sub">交通基础设施知识资产工厂：把分散、异构、中英文混杂的工程资料变成带出处、可版本化、可核验、可发布的知识图谱，为大模型和智能体提供可信的知识底座。</p>
+  <div class="hero-notes"><span class="hero-note">逐句可追溯</span><span class="hero-note">中英文实体对齐</span><span class="hero-note">发布哈希快照</span></div></div>
   <div class="kpis" id="kpis"></div>
 </header>
 <div class="pipe"><div><b>接入</b>文本/PDF/Word</div><div><b>分句</b>中英文</div><div><b>抽取</b>实体与编号</div><div><b>对齐</b>跨语言实体</div><div><b>关系</b>本体约束</div><div><b>复核</b>人工审定</div><div><b>核验</b>主张真伪</div><div><b>发布</b>哈希快照</div></div>
 <div class="tabs" id="tabs"></div>
 <section id="view"></section>
+<footer><span>C4AI THREE-TRACK SUITE · KNOWLEDGE ASSET TRACK</span><span>INGEST → ALIGN → VERIFY → RELEASE</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -41,7 +69,7 @@ async function api(p,o){const r=await fetch(p,o);const b=await r.json().catch(()
 const post=(p,b)=>api(p,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})});
 const COLORS={Asset:'#7fb2ff',Defect:'#ff8f8f',Hazard:'#ffb36b',Measure:'#4fd69a',Activity:'#c7a6ff',Document:'#e7c56a',Standard:'#6fe1e0',Clause:'#f29ad8',Party:'#b9c8c2',Event:'#ffd56b'};
 const TABS=[['ingest','知识生产'],['graph','图谱浏览'],['search','混合检索'],['ask','知识问答'],['claim','主张核验'],['release','复核与发布']];let tab='graph';
-function tabs(){$('tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab ${k===tab?'on':''}" onclick="go('${k}')">${l}</button>`).join('')}
+function tabs(){$('tabs').innerHTML=TABS.map(([k,l],i)=>`<button class="tab ${k===tab?'on':''}" onclick="go('${k}')"><span class="tab-index">0${i+1}</span>${l}</button>`).join('')}
 async function kpis(){const m=await api('/metrics');$('kpis').innerHTML=[['资料',m.sources],['版本',m.versions],['实体',m.entities],['跨语言实体',m.cross_lingual_entities],['已确认关系',m.relations_by_status.ACCEPTED||0],['待复核',m.pending_review],['发布',m.releases]].map(([l,v])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('')}
 function go(k){tab=k;tabs();({ingest,graph,search,ask,claim,release})[k]()}
 async function ingest(){$('view').innerHTML=`<div class="grid"><div class="card"><h2>接入一份工程资料</h2>
