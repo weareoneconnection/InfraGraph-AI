@@ -74,7 +74,8 @@ def _ingest(**kwargs):
 @app.get("/health")
 def health():
     m = graph().metrics()
-    return {"status": "ok", "product": "InfraGraph AI", "version": __version__, "model": "configured" if graph().model else "rules",
+    return {"status": "ok", "product": "InfraGraph AI", "version": __version__,
+            "model": graph().model.describe() if graph().model else "rules",
             "sources": m["sources"], "entities": m["entities"], "provenance_complete": m["provenance_complete"]}
 
 
@@ -128,6 +129,16 @@ def document(ref: str):
 @app.get("/search")
 def search(q: str = Query(min_length=1, max_length=500), limit: int = Query(5, ge=1, le=20), jurisdiction: str | None = None):
     return {"query": q, "query_entities": graph().query_entities(q), "results": graph().search(q, limit, jurisdiction)}
+
+
+class QuestionIn(BaseModel):
+    question: str = Field(min_length=2, max_length=2000)
+    jurisdiction: str | None = None
+
+
+@app.post("/ask")
+def ask(payload: QuestionIn):
+    return graph().ask(payload.question, payload.jurisdiction)
 
 
 @app.post("/claims/verify")

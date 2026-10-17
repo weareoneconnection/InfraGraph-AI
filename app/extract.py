@@ -10,6 +10,7 @@ stored source text at any time.
 from __future__ import annotations
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from .llm import Model
@@ -159,30 +160,39 @@ def model_items(model: Model, sentence: str) -> tuple[list[tuple[str, str, str]]
     return ents, rels
 
 
+MODEL_WORKERS = 4
+MODEL_CONFIDENCE = 0.65  # below REVIEW_THRESHOLD: a model-only relation is a suggestion until a human confirms it
+
+
 def extract(text: str, model: Model | None = None) -> Extraction:
     result = Extraction(sentences(text))
+    proposals: dict[int, tuple] = {}
+    if model is not None and result.sentences:
+        # One model call per sentence, in parallel; a failed call simply adds nothing.
+        with ThreadPoolExecutor(max_workers=MODEL_WORKERS) as pool:
+            for index, items in enumerate(pool.map(lambda s: model_items(model, s[2]), result.sentences)):
+                if items:
+                    proposals[index] = items
     for index, (start, end, sentence) in enumerate(result.sentences):
         mentions = _mentions_in(sentence, start, index)
         rels = _rule_relations(sentence, start, end, index, mentions)
-        if model is not None:
-            items = model_items(model, sentence)
-            if items:
-                ents, model_rels = items
-                known = {m.key for m in mentions}
-                for etype, name, quote in ents:
-                    pos = sentence.find(quote)
-                    if etype in TYPES and pos >= 0:
-                        canonical = resolve(etype, name)
-                        if key(etype, canonical) not in known:
-                            mentions.append(Mention(key(etype, canonical), etype, canonical, quote, index, start + pos, start + pos + len(quote)))
-                            known.add(key(etype, canonical))
-                for st, sn, pred, ot, on in model_rels:
-                    s_key, o_key = key(st, resolve(st, sn)), key(ot, resolve(ot, on))
-                    if s_key in known and o_key in known and s_key != o_key and allowed(pred, st, ot):
-                        rels.append(Relation(s_key, pred, o_key, index, sentence, start, end, 0.75, "model"))
+        if index in proposals:
+            ents, model_rels = proposals[index]
+            known = {m.key for m in mentions}
+            for etype, name, quote in ents:
+                pos = sentence.find(quote)
+                if etype in TYPES and pos >= 0 and quote.strip():
+                    canonical = resolve(etype, name)
+                    if key(etype, canonical) not in known:
+                        mentions.append(Mention(key(etype, canonical), etype, canonical, quote, index, start + pos, start + pos + len(quote)))
+                        known.add(key(etype, canonical))
+            for st, sn, pred, ot, on in model_rels:
+                s_key, o_key = key(st, resolve(st, sn)), key(ot, resolve(ot, on))
+                if s_key in known and o_key in known and s_key != o_key and allowed(pred, st, ot):
+                    rels.append(Relation(s_key, pred, o_key, index, sentence, start, end, MODEL_CONFIDENCE, "model"))
         result.mentions.extend(mentions)
         seen = set()
-        for r in sorted(rels, key=lambda r: -r.confidence):
+        for r in sorted(rels, key=lambda r: -r.confidence):  # a rule relation wins over the same model suggestion
             k = (r.subject, r.predicate, r.object)
             if k not in seen:
                 seen.add(k)

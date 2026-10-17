@@ -9,7 +9,7 @@ from mcp.server import MCPServer
 
 from .service import KnowledgeGraph
 
-EXPOSED = ["search_knowledge", "verify_claim", "get_entity", "graph_neighbors", "list_releases"]
+EXPOSED = ["search_knowledge", "ask_knowledge", "verify_claim", "get_entity", "graph_neighbors", "list_releases"]
 
 
 def build_server(kg: KnowledgeGraph) -> MCPServer:
@@ -20,6 +20,11 @@ def build_server(kg: KnowledgeGraph) -> MCPServer:
     def search_knowledge(query: str, limit: int = 5) -> dict:
         """Hybrid search (BM25 + entity linking, Chinese and English). Each result cites source, version, hash and sentence."""
         return {"query_entities": kg.query_entities(query), "results": kg.search(query, min(max(limit, 1), 20))}
+
+    @server.tool()
+    def ask_knowledge(question: str) -> dict:
+        """Grounded answer: a model answer citing only retrieved sentences (numbers checked), else the passages themselves."""
+        return kg.ask(question)
 
     @server.tool()
     def verify_claim(text: str) -> dict:

@@ -19,6 +19,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE))
 
+from app.llm import from_env  # noqa: E402
 from app.service import KnowledgeGraph, ReleaseBlocked  # noqa: E402
 from app.store import Store  # noqa: E402
 
@@ -48,7 +49,12 @@ def relation_scores(kg: KnowledgeGraph) -> dict:
 
 
 def main() -> int:
-    kg = KnowledgeGraph(Store(tempfile.mktemp(suffix=".db")))
+    # --model: extraction, claim checks and answers also use the configured real model (INFRAGRAPH_MODEL_*).
+    model = from_env() if "--model" in sys.argv else None
+    if "--model" in sys.argv and model is None:
+        print("--model needs INFRAGRAPH_MODEL_BASE_URL and INFRAGRAPH_MODEL", file=sys.stderr)
+        return 2
+    kg = KnowledgeGraph(Store(tempfile.mktemp(suffix=".db")), model=model)
     load(kg)
     rel = relation_scores(kg)
 
@@ -70,6 +76,7 @@ def main() -> int:
         result = kg.verify_claim(case["text"])
         evidence_ok = "ref" not in case or (bool(result["evidence"]) and result["evidence"][0]["ref"] == case["ref"])
         claims.append({"text": case["text"], "expect": case["expect"], "got": result["verdict"], "ok": result["verdict"] == case["expect"],
+                       "method": result["method"], "needs_review": result["needs_review"],
                        "evidence_ok": evidence_ok, "evidence": [e["ref"] for e in result["evidence"]]})
     claim_acc = sum(c["ok"] for c in claims) / len(claims)
     evidence_acc = sum(c["evidence_ok"] for c in claims) / len(claims)
@@ -89,7 +96,8 @@ def main() -> int:
     # An ambiguous sentence (two piers, two defects, no cue) must go to human review, not straight into the graph.
     kg.ingest(ref="QA-WALK-09", title="巡检记录", version="1.0", jurisdiction="MY", domain="quality",
               content="巡检发现P70和P71墩存在裂缝和剥落。")
-    pending = kg.review_queue()
+    pending = [r for r in kg.review_queue() if r["ref"] == "QA-WALK-09" and r["method"] == "rules"]
+    others = [r for r in kg.review_queue() if r not in pending]  # model suggestions elsewhere also wait for review
     blocked = False
     try:
         kg.release("2026.10-r1", "知识管理员 王工")
@@ -97,6 +105,8 @@ def main() -> int:
         blocked = True
     for item in pending:
         kg.review(item["id"], "accept" if item["subject"] == "Asset:P70" else "reject", "知识管理员 王工")
+    for item in [r for r in kg.review_queue() if r["id"] not in {p["id"] for p in pending}]:
+        kg.review(item["id"], "reject", "知识管理员 王工")  # the benchmark does not adopt unreviewed model suggestions
     release = kg.release("2026.10-r1", "知识管理员 王工")
     governance_ok = blocked and len(pending) == 4 and len(release["manifest_hash"]) == 64 and kg.releases()[0]["intact"]
 
@@ -105,7 +115,14 @@ def main() -> int:
                "claim_accuracy": round(claim_acc, 3), "claim_evidence_accuracy": round(evidence_acc, 3), "version_resolution": 1.0 if version_ok else 0.0,
                "provenance_completeness": provenance, "release_governance": 1.0 if governance_ok else 0.0}
     passed = all(metrics[k] >= v for k, v in GATES.items())
-    print(json.dumps({"suite": "INFRAGRAPH_BENCHMARK", "version": "2.0", "dataset": GOLD["version"], "status": "PASSED" if passed else "FAILED",
+    extra = {}
+    if model is not None:
+        model_rel = kg.store.rows("SELECT COUNT(*) n FROM relations WHERE method='model'")[0]["n"]
+        answers = [kg.ask(c["q"]) for c in GOLD["retrieval"]]
+        extra = {"mode": "model", "model": model.describe(), "model_relation_suggestions": model_rel,
+                 "grounded_answers_accepted": f"{sum(a['method'] == 'model' for a in answers)}/{len(answers)}",
+                 "claims_decided_by_model": sum(1 for c in claims if c.get("method") == "model")}
+    print(json.dumps({"suite": "INFRAGRAPH_BENCHMARK", "version": "2.0", "dataset": GOLD["version"], "status": "PASSED" if passed else "FAILED", **extra,
                       "sizes": {"documents": len(GOLD["relations"]), "gold_relations": sum(len(v) for v in GOLD["relations"].values()),
                                 "retrieval_queries": n, "claims": len(claims), "cross_lingual_entities": len(GOLD["cross_lingual_entities"])},
                       "metrics": metrics, "gates": GATES, "relation_errors": rel["errors"],
