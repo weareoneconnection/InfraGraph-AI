@@ -24,7 +24,7 @@ git clone https://github.com/weareoneconnection/InfraGraph-AI.git && cd InfraGra
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ./run.sh                    # http://127.0.0.1:8102 ，点“知识生产 → 载入演示语料”
-pytest -q                   # 23 项测试
+pytest -q                   # 35 项测试
 python evals/run_eval.py    # 标注集评测
 ```
 

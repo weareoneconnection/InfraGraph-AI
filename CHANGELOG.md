@@ -11,7 +11,7 @@
 - Human review queue; release gates (provenance, ontology, review); manifest SHA-256 and release diffs; tamper detection.
 - MCP server; JSON-LD and N-Triples export; web console with graph explorer.
 - Claim evidence must name the same asset, document, clause or standard as the claim (source-level).
-- Annotated evaluation set (incl. deciding-source accuracy) and 23 tests.
+- Annotated evaluation set (incl. deciding-source accuracy) and 35 tests.
 
 ## 1.0.0
 - Keyword ontology mapping, FTS5 search and release hash.

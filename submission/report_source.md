@@ -284,9 +284,9 @@ MCP 服务只提供查询与核验；入库、复核和发布是知识管理人�
 
 运行环境：Python 3.11 及以上。
 
-安装与启动：`pip install -r requirements.txt`，`./run.sh`，浏览器打开 `http://127.0.0.1:8102`，在“知识生产”中载入演示语料。
+安装与启动：`pip install -r requirements.txt`，`./run.sh`，本地浏览器打开 `http://127.0.0.1:8102`，在“知识生产”中载入演示语料。在线演示地址为 `https://infragraph-ai-production.up.railway.app`；Railway 生产环境使用独立的 `/data` 持久化卷，并预置合成演示语料。
 
-评测：`python evals/run_eval.py`；自动化测试：`pytest -q`（23 项）。
+评测：`python evals/run_eval.py`；自动化测试：`pytest -q`（35 项，含模型客户端降级、API 与 MCP）。
 
 MCP 服务：`python -m app.mcp_server`（stdio）或 `python -m app.mcp_server --transport streamable-http`。
 
