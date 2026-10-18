@@ -90,7 +90,8 @@ def ingest(doc: DocumentIn):
 
 
 @app.post("/documents/upload", status_code=201)
-async def upload(file: UploadFile = File(...), ref: str = Form(...), title: str = Form(""), version: str = Form("1.0"),
+async def upload(file: UploadFile = File(...), ref: str = Form(..., min_length=2, max_length=120),
+                 title: str = Form("", max_length=300), version: str = Form("1.0", min_length=1, max_length=40),
                  authority: str = Form(""), jurisdiction: str = Form(""), domain: str = Form(""), lifecycle: str = Form("")):
     data = await file.read(20 * 1024 * 1024 + 1)
     if len(data) > 20 * 1024 * 1024:
@@ -99,6 +100,8 @@ async def upload(file: UploadFile = File(...), ref: str = Form(...), title: str 
         text = parse_bytes(file.filename or "upload.txt", data)
     except ValueError as exc:
         raise HTTPException(415, str(exc))
+    if len(text.strip()) < 10:
+        raise HTTPException(422, "文件已接收，但未能提取至少 10 个字符的正文；扫描版 PDF 请先进行 OCR。")
     return _ingest(ref=ref, title=title or file.filename or ref, content=text, version=version, authority=authority,
                    jurisdiction=jurisdiction, domain=domain, lifecycle=lifecycle, actor="upload")
 

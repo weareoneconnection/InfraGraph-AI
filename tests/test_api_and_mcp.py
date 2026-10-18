@@ -15,6 +15,9 @@ def test_api_flow():
         assert client.get("/graph").json()["edges"]
         files = {"file": ("note.txt", "P90墩发现裂缝，已开具NCR-0101。".encode(), "text/plain")}
         assert client.post("/documents/upload", data={"ref": "UP-1"}, files=files).status_code == 201
+        empty = client.post("/documents/upload", data={"ref": "UP-EMPTY"}, files={"file": ("empty.txt", b"   ", "text/plain")})
+        assert empty.status_code == 422
+        assert "扫描版 PDF 请先进行 OCR" in empty.json()["detail"]
         assert client.post("/documents/upload", data={"ref": "UP-2"}, files={"file": ("x.exe", b"MZ", "application/octet-stream")}).status_code == 415
         assert client.post("/releases", json={"version": "api-1", "actor": "知识管理员 王工"}).status_code in (201, 409)
         assert client.get("/").status_code == 200
