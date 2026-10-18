@@ -43,7 +43,7 @@ header.hero:after{content:"KG";position:absolute;right:1rem;top:-3.8rem;font:900
 h2{font-size:16px;letter-spacing:-.01em}h3{font-size:11px;text-transform:uppercase;letter-spacing:.12em}
 textarea,input,select{background:rgba(3,14,11,.78);border-color:rgba(255,255,255,.1);transition:border-color .2s,box-shadow .2s}textarea:focus,input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(84,229,169,.11)}
 .btn{min-height:40px;border-radius:11px;background:linear-gradient(135deg,#25aa72,#41d69a);box-shadow:0 9px 24px rgba(37,170,114,.18);transition:transform .18s,filter .18s}.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}.btn:focus-visible,.tab:focus-visible,.tag.ent:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}.btn.alt{box-shadow:none;background:rgba(255,255,255,.045)}.item{padding:13px 14px;border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.034);box-shadow:inset 3px 0 0 rgba(84,229,169,.14)}.tag{padding:2px 7px;border-radius:7px}.tag.ent{background:rgba(84,229,169,.05)}svg{height:590px;border-color:rgba(255,255,255,.08);background-color:#06140f;background-image:radial-gradient(circle at center,rgba(83,229,169,.055) 1px,transparent 1px);background-size:22px 22px}
-footer{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding:16px 2px 0;border-top:1px solid rgba(255,255,255,.07);color:#648276;font:11px var(--mono);letter-spacing:.05em}
+footer{display:flex;justify-content:flex-end;gap:12px;margin-top:24px;padding:16px 2px 0;border-top:1px solid rgba(255,255,255,.07);color:#648276;font:11px var(--mono);letter-spacing:.05em}
 @media(max-width:1080px){header.hero{grid-template-columns:1fr}.kpis{margin-top:22px;grid-template-columns:repeat(4,minmax(90px,1fr))}.grid{grid-template-columns:1fr}.pipe{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:640px){.appbar-inner{height:52px;padding:0 15px}.app-status{font-size:9px}.brand small{display:none}main{padding:16px 14px 56px}header.hero{padding:24px 20px;border-radius:20px}.hero h1{font-size:36px}.sub{font-size:13px}.kpis{grid-template-columns:repeat(2,1fr)}.pipe{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}.pipe:before{display:none}.pipe div{flex:0 0 124px;scroll-snap-align:start}.tabs{top:58px;width:100%;flex-wrap:nowrap}.card{padding:16px;border-radius:17px}.row>*{max-width:100%}svg{height:430px}footer{display:block;line-height:1.8}footer span{display:block}footer span+span{margin-top:6px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
@@ -61,7 +61,7 @@ footer{display:flex;justify-content:space-between;gap:12px;margin-top:24px;paddi
 <div class="pipe"><div><b>接入</b>文本/PDF/Word</div><div><b>分句</b>中英文</div><div><b>抽取</b>实体与编号</div><div><b>对齐</b>跨语言实体</div><div><b>关系</b>本体约束</div><div><b>复核</b>人工审定</div><div><b>核验</b>主张真伪</div><div><b>发布</b>哈希快照</div></div>
 <div class="tabs" id="tabs"></div>
 <section id="view"></section>
-<footer><span>C4AI THREE-TRACK SUITE · KNOWLEDGE ASSET TRACK</span><span>INGEST → ALIGN → VERIFY → RELEASE</span></footer>
+<footer><span>INGEST → ALIGN → VERIFY → RELEASE</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
