@@ -9,11 +9,12 @@ from mcp.server import MCPServer
 
 from .service import KnowledgeGraph
 
-EXPOSED = ["search_knowledge", "ask_knowledge", "verify_claim", "get_entity", "graph_neighbors", "list_releases"]
+EXPOSED = ["search_knowledge", "ask_knowledge", "verify_claim", "get_entity", "graph_neighbors", "trace_graph_path",
+           "governance_status", "list_releases"]
 
 
 def build_server(kg: KnowledgeGraph) -> MCPServer:
-    server = MCPServer("InfraGraph AI", version="2.0.0",
+    server = MCPServer("InfraGraph AI", version="3.0.0",
                        instructions="Governed transport-infrastructure knowledge graph with sentence-level provenance.")
 
     @server.tool()
@@ -40,6 +41,16 @@ def build_server(kg: KnowledgeGraph) -> MCPServer:
     def graph_neighbors(key: str) -> dict:
         """One-hop neighbourhood of an entity, with evidence quotes for every edge."""
         return kg.graph(focus=key)
+
+    @server.tool()
+    def trace_graph_path(source: str, target: str, max_hops: int = 4) -> dict:
+        """Shortest multi-hop path with evidence for every edge."""
+        return kg.path(source, target, min(max(max_hops, 1), 6))
+
+    @server.tool()
+    def governance_status() -> dict:
+        """Release gates, reviewer roles, conflict count, signature mode and recent audit trail."""
+        return kg.governance()
 
     @server.tool()
     def list_releases() -> list[dict]:

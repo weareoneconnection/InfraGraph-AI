@@ -12,13 +12,26 @@ from pydantic import BaseModel, Field
 from . import __version__
 from .llm import from_env
 from .ontology import schema
-from .parser import parse_bytes
+from .parser import parse_document
+from .sandbox import DemoSandbox, SandboxError
 from .service import KnowledgeGraph, ReleaseBlocked, ReviewError
 from .store import Store
 
 BASE = Path(__file__).resolve().parent
 DEMO = BASE.parent / "data" / "corpus.jsonl"
 kg: KnowledgeGraph | None = None
+sandbox = DemoSandbox()
+
+EVALUATION = {
+    "suite": "INFRAGRAPH_BENCHMARK", "version": "2.0", "dataset": "infragraph-gold-2026.10.17", "status": "PASSED",
+    "sizes": {"documents": 10, "gold_relations": 50, "retrieval_queries": 16, "claims": 18, "cross_lingual_entities": 11},
+    "metrics": {"relation_precision": 1.0, "relation_recall": 0.96, "relation_f1": 0.98,
+                "cross_lingual_linking": 1.0, "retrieval_recall_at_3": 1.0, "retrieval_mrr": 0.938,
+                "claim_accuracy": 1.0, "claim_evidence_accuracy": 1.0, "version_resolution": 1.0,
+                "provenance_completeness": 1.0, "release_governance": 1.0},
+    "boundary": "开发团队构造的合成标注集，仅证明该集合上的可复现性，不代表真实项目准确率。",
+    "command": "python evals/run_eval.py",
+}
 
 
 def graph() -> KnowledgeGraph:
@@ -47,6 +60,7 @@ class DocumentIn(BaseModel):
     domain: str = ""
     lifecycle: str = ""
     actor: str = "ingestion"
+    classification: str = Field(default="INTERNAL", pattern="^(PUBLIC|INTERNAL|CONFIDENTIAL)$")
 
 
 class ClaimIn(BaseModel):
@@ -57,11 +71,23 @@ class ClaimIn(BaseModel):
 class ReviewIn(BaseModel):
     decision: str = Field(pattern="^(accept|reject)$")
     actor: str = Field(min_length=2, max_length=120)
+    role: str = "knowledge_reviewer"
 
 
 class ReleaseIn(BaseModel):
     version: str = Field(min_length=1, max_length=40)
     actor: str = Field(min_length=2, max_length=120)
+    role: str = "knowledge_publisher"
+
+
+class SandboxReviewIn(BaseModel):
+    relation_id: int
+    decision: str = Field(pattern="^(accept|reject)$")
+    actor: str = Field(min_length=2, max_length=120)
+
+
+class SandboxActorIn(BaseModel):
+    actor: str = Field(default="知识管理员 王工", min_length=2, max_length=120)
 
 
 def _ingest(**kwargs):
@@ -92,18 +118,22 @@ def ingest(doc: DocumentIn):
 @app.post("/documents/upload", status_code=201)
 async def upload(file: UploadFile = File(...), ref: str = Form(..., min_length=2, max_length=120),
                  title: str = Form("", max_length=300), version: str = Form("1.0", min_length=1, max_length=40),
-                 authority: str = Form(""), jurisdiction: str = Form(""), domain: str = Form(""), lifecycle: str = Form("")):
+                 authority: str = Form(""), jurisdiction: str = Form(""), domain: str = Form(""), lifecycle: str = Form(""),
+                 classification: str = Form("INTERNAL", pattern="^(PUBLIC|INTERNAL|CONFIDENTIAL)$")):
     data = await file.read(20 * 1024 * 1024 + 1)
     if len(data) > 20 * 1024 * 1024:
         raise HTTPException(413, "file too large")
     try:
-        text = parse_bytes(file.filename or "upload.txt", data)
+        parsed = parse_document(file.filename or "upload.txt", data)
     except ValueError as exc:
         raise HTTPException(415, str(exc))
-    if len(text.strip()) < 10:
+    if len(parsed.text.strip()) < 10:
         raise HTTPException(422, "文件已接收，但未能提取至少 10 个字符的正文；扫描版 PDF 请先进行 OCR。")
-    return _ingest(ref=ref, title=title or file.filename or ref, content=text, version=version, authority=authority,
-                   jurisdiction=jurisdiction, domain=domain, lifecycle=lifecycle, actor="upload")
+    result = _ingest(ref=ref, title=title or file.filename or ref, content=parsed.text, version=version, authority=authority,
+                     jurisdiction=jurisdiction, domain=domain, lifecycle=lifecycle, actor="upload",
+                     blocks=[b.dump() for b in parsed.blocks], document_profile=parsed.profile(), classification=classification)
+    result["intake"] = parsed.profile()
+    return result
 
 
 @app.post("/demo/load")
@@ -130,8 +160,11 @@ def document(ref: str):
 
 
 @app.get("/search")
-def search(q: str = Query(min_length=1, max_length=500), limit: int = Query(5, ge=1, le=20), jurisdiction: str | None = None):
-    return {"query": q, "query_entities": graph().query_entities(q), "results": graph().search(q, limit, jurisdiction)}
+def search(q: str = Query(min_length=1, max_length=500), limit: int = Query(5, ge=1, le=20), jurisdiction: str | None = None,
+           domain: str | None = None, lifecycle: str | None = None):
+    return {"query": q, "query_entities": graph().query_entities(q), "method": "BM25 + entity link + graph expansion + semantic overlap",
+            "filters": {"jurisdiction": jurisdiction, "domain": domain, "lifecycle": lifecycle},
+            "results": graph().search(q, limit, jurisdiction, domain=domain, lifecycle=lifecycle)}
 
 
 class QuestionIn(BaseModel):
@@ -162,6 +195,24 @@ def graph_view(focus: str | None = None, include_pending: bool = True):
     return graph().graph(focus, include_pending)
 
 
+@app.get("/graph/path")
+def graph_path(source: str, target: str, max_hops: int = Query(4, ge=1, le=6)):
+    return graph().path(source, target, max_hops)
+
+
+@app.get("/graph/conflicts")
+def graph_conflicts():
+    return graph().conflicts()
+
+
+@app.get("/documents/{ref}/lineage")
+def document_lineage(ref: str):
+    try:
+        return graph().lineage(ref)
+    except KeyError:
+        raise HTTPException(404, "source not found")
+
+
 @app.get("/review")
 def review_queue():
     return graph().review_queue()
@@ -170,7 +221,7 @@ def review_queue():
 @app.post("/review/{relation_id}")
 def review(relation_id: int, payload: ReviewIn):
     try:
-        return graph().review(relation_id, payload.decision, payload.actor)
+        return graph().review(relation_id, payload.decision, payload.actor, payload.role)
     except ReviewError as exc:
         raise HTTPException(403, str(exc))
     except KeyError as exc:
@@ -185,7 +236,7 @@ def gates():
 @app.post("/releases", status_code=201)
 def release(payload: ReleaseIn):
     try:
-        return graph().release(payload.version, payload.actor)
+        return graph().release(payload.version, payload.actor, payload.role)
     except ReviewError as exc:
         raise HTTPException(403, str(exc))
     except ReleaseBlocked as exc:
@@ -208,6 +259,70 @@ def export(fmt: str = Query("jsonld", pattern="^(jsonld|ntriples)$")):
 @app.get("/metrics")
 def metrics():
     return graph().metrics()
+
+
+@app.get("/governance")
+def governance():
+    return graph().governance()
+
+
+@app.get("/audit")
+def audit(limit: int = Query(50, ge=1, le=200)):
+    return graph().audit_log(limit)
+
+
+@app.get("/evaluation")
+def evaluation():
+    return EVALUATION
+
+
+@app.post("/sandbox/sessions", status_code=201)
+def create_sandbox():
+    return sandbox.create()
+
+
+@app.get("/sandbox/sessions/{session_id}")
+def get_sandbox(session_id: str):
+    try:
+        return sandbox.view(session_id)
+    except KeyError:
+        raise HTTPException(404, "sandbox session not found")
+
+
+@app.post("/sandbox/sessions/{session_id}/try-release")
+def sandbox_try_release(session_id: str, payload: SandboxActorIn):
+    try:
+        return sandbox.try_release(session_id, payload.actor)
+    except KeyError:
+        raise HTTPException(404, "sandbox session not found")
+
+
+@app.post("/sandbox/sessions/{session_id}/review")
+def sandbox_review(session_id: str, payload: SandboxReviewIn):
+    try:
+        return sandbox.review(session_id, payload.relation_id, payload.decision, payload.actor)
+    except KeyError:
+        raise HTTPException(404, "sandbox session not found")
+    except SandboxError as exc:
+        raise HTTPException(409, str(exc))
+
+
+@app.post("/sandbox/sessions/{session_id}/recommended-review")
+def sandbox_recommended(session_id: str, payload: SandboxActorIn):
+    try:
+        return sandbox.apply_recommended_review(session_id, payload.actor)
+    except KeyError:
+        raise HTTPException(404, "sandbox session not found")
+
+
+@app.post("/sandbox/sessions/{session_id}/publish")
+def sandbox_publish(session_id: str, payload: SandboxActorIn):
+    try:
+        return sandbox.publish(session_id, "demo-r1", payload.actor)
+    except KeyError:
+        raise HTTPException(404, "sandbox session not found")
+    except SandboxError as exc:
+        raise HTTPException(409, str(exc))
 
 
 @app.get("/", include_in_schema=False)

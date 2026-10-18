@@ -28,8 +28,19 @@ CREATE TABLE IF NOT EXISTS claims(id INTEGER PRIMARY KEY AUTOINCREMENT, text TEX
   evidence TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS releases(id INTEGER PRIMARY KEY AUTOINCREMENT, version TEXT UNIQUE NOT NULL, manifest_hash TEXT NOT NULL,
   manifest TEXT NOT NULL, diff TEXT NOT NULL, gates TEXT NOT NULL, published_by TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS document_blocks(id INTEGER PRIMARY KEY AUTOINCREMENT, version_id INTEGER NOT NULL REFERENCES versions(id),
+  page INTEGER NOT NULL, block_index INTEGER NOT NULL, kind TEXT NOT NULL, locator TEXT NOT NULL,
+  start INTEGER NOT NULL, end INTEGER NOT NULL, text TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS document_profiles(version_id INTEGER PRIMARY KEY REFERENCES versions(id), format TEXT NOT NULL,
+  pages INTEGER NOT NULL, blocks INTEGER NOT NULL, tables INTEGER NOT NULL, ocr_status TEXT NOT NULL, warnings TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS audit_events(id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, actor TEXT NOT NULL,
+  role TEXT NOT NULL, target TEXT NOT NULL, detail TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS release_signatures(release_id INTEGER PRIMARY KEY REFERENCES releases(id), algorithm TEXT NOT NULL,
+  key_id TEXT NOT NULL, signature TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS ix_mentions_entity ON mentions(entity_key);
 CREATE INDEX IF NOT EXISTS ix_relations_status ON relations(status);
+CREATE INDEX IF NOT EXISTS ix_blocks_version_span ON document_blocks(version_id,start,end);
+CREATE INDEX IF NOT EXISTS ix_audit_created ON audit_events(created_at);
 """
 
 
